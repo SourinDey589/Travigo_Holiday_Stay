@@ -47,7 +47,7 @@ const SignUp = async (req, res, next) => {
         return res.status(422).json({ message: 'User exists already, please login instead.' });
     }
 
-    const newUser = new User({ username, email, password: hash, photo, role });
+    const newUser = new User({ username, email, password: hash, role });
 
     try {
         await newUser.save();

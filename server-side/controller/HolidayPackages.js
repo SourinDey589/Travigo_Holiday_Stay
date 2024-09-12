@@ -12,10 +12,10 @@ const AddPlace = async (req, res, next) => {
         city: req.body.city,
         address: req.body.address,
         distance: req.body.distance,
-        photo: req.body.photo,
-        desc: req.body.desc,
         price: req.body.price,
         maxGroupSize: req.body.maxGroupSize,
+        desc: req.body.desc,
+        photo: req.body.photo,
         featured: req.body.featured || false,
     });
 
@@ -168,5 +168,15 @@ const getTourCount = async (req, res, next) => {
     }
 }; 
 
+// View All Travel Places
+const ViewAllPlace = async (req, res, next) => {
 
-module.exports = { AddPlace, ViewPlace, ViewPlaceById, ViewPlaceBySearch, ViewFeaturedPlace, getTourCount, UpdatePlace, DeletePlace };
+    try {
+        const tour = await HolidayPackage.find({});
+        return res.json({ tour });
+    } catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
+};
+
+module.exports = { AddPlace, ViewPlace, ViewPlaceById, ViewPlaceBySearch, ViewFeaturedPlace, getTourCount, UpdatePlace, DeletePlace, ViewAllPlace };

@@ -103,6 +103,7 @@ app.get('/Tour/View/:id', holidayController.ViewPlaceById);
 app.get('/Tour/Search', holidayController.ViewPlaceBySearch);
 app.get('/Search/Featured', holidayController.ViewFeaturedPlace);
 app.get('/Search/getTourCount', holidayController.getTourCount);
+app.get('/Tour/ViewAll', holidayController.ViewAllPlace);
 
 // Category Routes
 // app.post('/Category/Add', categoryController.AddCategory);

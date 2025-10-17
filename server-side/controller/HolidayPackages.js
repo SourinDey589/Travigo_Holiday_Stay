@@ -1,55 +1,47 @@
 // controller/HolidayPackages.js
 
-// import the places file from models
 const HolidayPackage = require('../models/holidayPackage');
-// const Category = require('../models/categories');
 
 // Add New Place to Travel
 const AddPlace = async (req, res, next) => {
-    // Create a new HolidayPackage instance with the request body
     const newTour = new HolidayPackage({
         title: req.body.title,
         city: req.body.city,
         address: req.body.address,
         distance: req.body.distance,
+        photo: req.body.photo,
         price: req.body.price,
+        seasonalPrice: req.body.seasonalPrice, // Optional field for sessional pricing
+        seasonStart: req.body.seasonStart,    // Start date for sessional pricing
+        seasonEnd: req.body.seasonEnd,        // End date for sessional pricing
         maxGroupSize: req.body.maxGroupSize,
         desc: req.body.desc,
-        photo: req.body.photo,
         featured: req.body.featured || false,
     });
 
     try {
-        // Validate request body fields
-        if (!newTour.title || !newTour.city || !newTour.address || !newTour.distance || !newTour.photo || !newTour.desc || !newTour.price || !newTour.maxGroupSize) {
+        if (!newTour.title || !newTour.city || !newTour.address || !newTour.distance || !newTour.desc || !newTour.price || !newTour.maxGroupSize) {
             return res.status(400).json({ error: 'Missing required fields.' });
         }
 
-        if (req.photo) {
-            updatedData.photo = `/uploads/${req.file.filename}`;
+        // Check if a photo was uploaded
+        if (req.file) {
+            newTour.photo = `/uploads/${req.file.filename}`;
         } else if (req.existingFilePath) {
             // If the file exists, use the existing file path
-            updatedData.photo = req.existingFilePath.replace('uploads', '/uploads');
+            newTour.photo = req.existingFilePath.replace('uploads', '/uploads');
         }
 
-        // Save the new holiday package to the database
         const savedHoliday = await newTour.save();
-
-        // Respond with a success message and the saved holiday package
         return res.status(201).json({ message: 'Holiday Package Successfully Created.', holidayPackage: savedHoliday });
     } catch (error) {
-        // Log the error details for debugging
         console.error('Error Details:', error);
-
-        // Respond with a generic error message
         return res.status(500).json({ error: 'Failed to create Holiday Package.', details: error.message });
     }
 };
 
 // View All Travel Places
 const ViewPlace = async (req, res, next) => {
-
-    // for pagination
     const page = parseInt(req.query.page);
 
     try {
@@ -58,7 +50,7 @@ const ViewPlace = async (req, res, next) => {
     } catch (error) {
         return res.status(400).json({ error: error.message });
     }
-}; 
+};
 
 // View Travel Places by ID
 const ViewPlaceById = async (req, res, next) => {
@@ -66,14 +58,29 @@ const ViewPlaceById = async (req, res, next) => {
 
     try {
         const tour = await HolidayPackage.findById(id).populate("reviews");
-        {/*if (post.owner.toString() !== req.User.id) {
-            return res.status(401).json({ message: 'User not authorized' });
-        }*/}
-        if(!tour){
-            return res.json({ message: 'Holiday Package Not found!' });
+        if (!tour) {
+            return res.status(404).json({ message: 'Holiday Package Not Found!' });
         }
 
-        return res.json(tour);
+        const currentDate = new Date();
+        let currentPrice = tour.price;
+
+        // Check if sessional pricing applies
+        if (tour.seasonStart && tour.seasonEnd) {
+            const seasonStart = new Date(tour.seasonStart);
+            const seasonEnd = new Date(tour.seasonEnd);
+
+            if (currentDate >= seasonStart && currentDate <= seasonEnd && tour.seasonalPrice) {
+                currentPrice = tour.seasonalPrice;
+            }
+        }
+
+        return res.json({
+            holidayPackage: {
+                ...tour.toObject(),
+                currentPrice, // Include calculated price based on session
+            },
+        });
     } catch (error) {
         return res.status(400).json({ error: error.message });
     }
@@ -87,15 +94,11 @@ const UpdatePlace = async (req, res, next) => {
         const updateTour = await HolidayPackage.findByIdAndUpdate(id, {
             $set: req.body
         }, { new: true });
-        {/*if (post.owner.toString() !== req.User.id) {
-            return res.status(401).json({ message: 'User not authorized' });
-        }*/}
-        
+
         return res.json({ message: 'Holiday Package Updated', updateTour });
     } catch (error) {
         return res.status(500).json({ message: 'Something went wrong, could not update your Holiday Package.', error: error.message });
     }
-
 };
 
 // Delete Travel Places
@@ -104,29 +107,25 @@ const DeletePlace = async (req, res, next) => {
 
     try {
         await HolidayPackage.findByIdAndDelete(id);
-        {/*if (post.owner.toString() !== req.User.id) {
-            return res.status(401).json({ message: 'User not authorized' });
-        }*/}
-        return res.json({ message: 'Holiday Package Deleted'});
+        return res.json({ message: 'Holiday Package Deleted' });
     } catch (error) {
         return res.status(400).json({ error: error.message });
     }
 };
 
-// get tour by search
+// View Travel Places by Search
 const ViewPlaceBySearch = async (req, res, next) => {
     const { city, distance, maxGroupSize } = req.query;
-    const query = {}; // Initialize an empty query object
+    const query = {};
 
-    
     if (city) {
-        query.city = new RegExp(city, 'i'); 
+        query.city = new RegExp(city, 'i');
     }
 
     if (distance) {
         const distanceValue = parseInt(distance);
         if (!isNaN(distanceValue)) {
-            query.distance = { $gte: distanceValue }; 
+            query.distance = { $gte: distanceValue };
         }
     }
 
@@ -145,32 +144,28 @@ const ViewPlaceBySearch = async (req, res, next) => {
     }
 };
 
-
 // View All Featured Places
 const ViewFeaturedPlace = async (req, res, next) => {
-
     try {
         const tour = await HolidayPackage.find({ featured: true }).populate("reviews").limit(8);
         return res.json(tour);
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }
-}; 
+};
 
-// get tour counts
+// Get Tour Counts
 const getTourCount = async (req, res, next) => {
-
     try {
         const tourCount = await HolidayPackage.estimatedDocumentCount();
-        return res.json( tourCount );
+        return res.json(tourCount);
     } catch (error) {
-        return res.status(500).json({ message: "failed to fetch", error: error.message });
+        return res.status(500).json({ message: "Failed to fetch", error: error.message });
     }
-}; 
+};
 
 // View All Travel Places
 const ViewAllPlace = async (req, res, next) => {
-
     try {
         const tour = await HolidayPackage.find({});
         return res.json({ tour });

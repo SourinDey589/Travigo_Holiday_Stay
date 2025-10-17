@@ -1,56 +1,39 @@
-// app.js
-
 // Import necessary modules
 const express = require('express');
+const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 
 dotenv.config();
 const app = express();
 const corsOptions = { origin: true, credentials: true };
 
 // Set up multer storage with a check for existing files
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-      cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-      const filePath = path.join('uploads', file.originalname);
-      
-      // Check if the file already exists
-      if (fs.existsSync(filePath)) {
-          // Use the existing file name if the file exists
-          cb(null, file.originalname);
-      } else {
-          // Save the file with the original name
-          cb(null, file.originalname);
-      }
-  },
-});
-
 const upload = multer({
-  storage: storage,
-  fileFilter: (req, file, cb) => {
-      // Check if the file already exists
-      const filePath = path.join('uploads', file.originalname);
-      if (fs.existsSync(filePath)) {
-          req.existingFilePath = filePath; // Set the existing file path in the request
-          cb(null, false); // Silently skip saving the file
-      } else {
-          cb(null, true); // Accept the file upload
-      }
-  },
-});
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+            cb(null, 'uploads/');
+        },
+        filename: (req, file, cb) => {
+            cb(null, Date.now() + '-' + file.originalname);
+        },
+    }),
+    fileFilter: (req, file, cb) => {
+        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+            return cb(new Error('Only image files are allowed!'), false);
+        }
+        cb(null, true);
+    },
+}).single('photo');
 
 // Middleware
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increase JSON body size limit
+app.use(express.urlencoded({ limit: '50mb', extended: true })); // Increase URL-encoded body size limit
 app.use(cors(corsOptions));
 app.use(cookieParser());
-
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Import the mongoose library
@@ -58,17 +41,14 @@ const mongoose = require('mongoose');
 const { check } = require('express-validator');
 
 // MongoDB connection
-mongoose
-    .connect('mongodb://localhost:27017')
+mongoose.connect('mongodb://localhost:27017/tonnystark')
     .then(() => console.log('MongoDB connected.'))
     .catch((err) => console.log(err));
 
 // Import controller routes
 const userController = require('./controller/Users');
 const holidayController = require('./controller/HolidayPackages');
-// const categoryController = require('./controller/Categories');
 const bookingController = require('./controller/TourBookings');
-// const verifyController = require('./utils/verifyToken');
 const reviewController = require('./controller/Reviews');
 const statisticsController = require('./controller/StatisticsController');
 
@@ -86,7 +66,7 @@ app.post('/SignIn', userController.SignIn);
 
 app.get('/Users', userController.getUsers);
 app.get('/Users/:id', userController.getUsersById);
-app.put('/Users/Update/:id', upload.single('photo'), userController.updateUser);
+app.put('/Users/Update/:id', upload, userController.updateUser);
 app.delete('/Users/Delete/:id', userController.deleteUser);
 app.get('/MyBookings/:id', userController.getMyTourBooking);
 app.get('/count', userController.getUserCount);
@@ -94,7 +74,7 @@ app.get('/active', userController.getActiveUsers);
 app.post('/admin/add-user', userController.addUserByAdmin);
 
 // Holiday Package Routes
-app.post('/Tour/Add', upload.single('photo'), holidayController.AddPlace);
+app.post('/Tour/Add', upload, holidayController.AddPlace);
 app.put('/Tour/Update/:id', holidayController.UpdatePlace);
 app.delete('/Tour/Delete/:id', holidayController.DeletePlace);
 
@@ -104,13 +84,6 @@ app.get('/Tour/Search', holidayController.ViewPlaceBySearch);
 app.get('/Search/Featured', holidayController.ViewFeaturedPlace);
 app.get('/Search/getTourCount', holidayController.getTourCount);
 app.get('/Tour/ViewAll', holidayController.ViewAllPlace);
-
-// Category Routes
-// app.post('/Category/Add', categoryController.AddCategory);
-// app.get('/Category/View', categoryController.ViewCategories);
-// app.get('/Category/View/:id', categoryController.ViewCategoryById);
-// app.put('/Category/Update/:id', categoryController.UpdateCategory);
-// app.delete('/Category/Delete/:id', categoryController.DeleteCategory);
 
 // Tour Booking Routes
 app.post('/Booking/Add', bookingController.AddBooking);

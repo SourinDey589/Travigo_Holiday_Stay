@@ -1,0 +1,53 @@
+.no-bookings-container {
+  margin-top: 50px;
+}
+
+.no-bookings-message {
+  margin-top: 20px;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary-color);
+  line-height: 1.5;
+}
+
+.btn.edit__btn {
+  background-color: #007bff;
+  color: white;
+
+}
+
+.btn.delete__btn {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.booking__bottom li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.booking__bottom li h5,
+.booking__bottom li span {
+  font-size: 1rem;
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.booking__bottom {
+  margin-top: 1rem;
+}
+
+.total h5,
+.total span {
+  color: var(--heading-color) !important;
+  font-weight: 700 !important;
+  font-size: 1.1rem !important;
+}
+
+.tour__img img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+

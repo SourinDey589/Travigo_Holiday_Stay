@@ -1,0 +1,29 @@
+.profile__form input{
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    color: var(--heading-color);
+    font-size: 1rem;
+    border: none;
+    border-bottom: 1px solid rgb(229, 231, 235);
+}
+
+.profile__form input:focus{
+    outline: none;
+}
+
+.custom-file-upload {
+    cursor: pointer;
+    background-color: #64efff;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    border: none;
+    display: inline-block;
+    margin-left: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+  
+.custom-file-upload:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}  
